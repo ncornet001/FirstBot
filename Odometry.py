@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import random
 import time
 
-last_recorded_time = 0
+global last_recorded_time
 
 #ROBOT PROPERTIES
 
@@ -30,12 +30,6 @@ if not ports:
 #def stop():
 #    dxl_io.set_wheel_mode([1,2])
 #    dxl_io.set_moving_speed({1: 0,2 : 0}) # Degrees / s  
-
-def tic():
-    last_recored_time = time.time()
-
-def toc():
-    return time.time() - last_recorded_time
     
 def direct_kinematics(ws1,ws2): # Wheel Speed 1, Wheel Speed 2
     ws1_ms = (ws1/360)*(2*wheel_radius)*np.pi
@@ -57,8 +51,8 @@ def inverse_kinematics(target_speed,target_angle):
 def odom(x,y,dir,linear_speed,turning_angle,delta):
     differential = odom_differential(linear_speed,turning_angle,delta)
     new_dir = dir + differential[2]
-    new_x = x+differential[0]*np.cos(np.deg2rad(dir))-differential[1]*np.sin(np.deg2rad(dir))
-    new_y = y+differential[0]*np.sin(np.deg2rad(dir))+differential[1]*np.cos(np.deg2rad(dir))
+    new_x = x + differential[0]*np.cos(np.deg2rad(dir))-differential[1]*np.sin(np.deg2rad(dir))
+    new_y = y + differential[0]*np.sin(np.deg2rad(dir))+differential[1]*np.cos(np.deg2rad(dir))
     return [new_x,new_y,new_dir]
 
 def odom_differential(linear_speed,turning_angle,delta,steps = 10):
@@ -70,10 +64,6 @@ def odom_differential(linear_speed,turning_angle,delta,steps = 10):
         dx += linear_speed*np.cos(np.deg2rad(dir))*(delta/steps)
         dy += linear_speed*np.sin(np.deg2rad(dir))*(delta/steps)
     return [dx,dy,dir]
-
-def goto_xya(x,y,a):
-    
-    return
 
 def image_to_robot(u,v):
     x = u-0.5
@@ -113,5 +103,3 @@ def draw_random_trajectory():
     axs.scatter(logs_x,logs_y)
     axs.set_aspect('equal')
     plt.show()
-
-draw_random_trajectory()
