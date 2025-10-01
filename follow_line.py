@@ -26,8 +26,8 @@ RIGHT_ID = 1
 
 ERROR_IMPACT = 0.5
 
-display_on = False
-motor_on = True
+display_on = True
+motor_on = False
 
 frames_analyzed = 0
 

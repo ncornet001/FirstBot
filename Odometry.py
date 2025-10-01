@@ -73,7 +73,7 @@ def draw_random_trajectory():
 
     kinematic = direct_kinematics(0,360)
     for i in range(1,800):
-        if((i % 25 == 0) & False):
+        if((i % 25 == 0)):
             kinematic = direct_kinematics(random.randrange(-5, 5)*180,random.randrange(-5, 5)*180)
             print(kinematic)
         res = odom(cur_x,cur_y,cur_dir,kinematic[0],kinematic[1],0.1)
