@@ -29,7 +29,8 @@ ERROR_IMPACT = 0.5
 display_on = True
 motor_on = False
 
-frames_analyzed = 0
+distance_between_wheels = 0.118
+wheel_radius = 0.025
 
 def get_contour_center(contour):
     M = cv2.moments(contour)
@@ -65,6 +66,14 @@ def setup_motors():
 
     return dxl_io
 
+def inverse_kinematics(target_speed,target_angle):
+    ws1_ms = (distance_between_wheels*np.pi*target_angle/720) + target_speed
+    ws2_ms = -(distance_between_wheels*np.pi*target_angle/720) + target_speed
+
+    ws1 = 360*(ws1_ms/(2*wheel_radius*np.pi))
+    ws2 = 360*(ws2_ms/(2*wheel_radius*np.pi))
+    return [ws1,ws2]
+
 def adjust_speed(io, error):
 
     left_speed = BASE_LEFT_SPEED
@@ -83,7 +92,6 @@ def display(frame, mask):
     cv2.imshow("Mask",mask)
 
 def start():
-    global frames_analyzed
 
     capture = cv2.VideoCapture(CAMERA_ID)
 
@@ -106,7 +114,6 @@ def start():
 
             frame = frame[-20:, :, :]
             #frame = frame[frame.shape[0]-20:, :, :]
-            frames_analyzed += 1
 
             hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
