@@ -39,11 +39,11 @@ def odom(x,y,dir,linear_speed,turning_angle,delta):
     new_y = y + differential[0]*np.sin(np.deg2rad(dir))+differential[1]*np.cos(np.deg2rad(dir))
     return [new_x,new_y,new_dir]
 
-def odom_differential(linear_speed,turning_angle,delta,steps = 10):
+def odom_differential(linear_speed,turning_angle,delta,steps = 1):
     dir = 0
     dx = 0
     dy = 0
-    for i in range(1,steps):
+    for i in range(steps):
         dir += turning_angle*(delta/steps)
         dx += linear_speed*np.cos(np.deg2rad(dir))*(delta/steps)
         dy += linear_speed*np.sin(np.deg2rad(dir))*(delta/steps)
@@ -71,9 +71,9 @@ def draw_random_trajectory():
     cur_y = logs_y[0]
     cur_dir = logs_dir[0]
 
-    kinematic = direct_kinematics(360,360)
+    kinematic = direct_kinematics(0,360)
     for i in range(1,800):
-        if(i % 25 == 0):
+        if((i % 25 == 0) & False):
             kinematic = direct_kinematics(random.randrange(-5, 5)*180,random.randrange(-5, 5)*180)
             print(kinematic)
         res = odom(cur_x,cur_y,cur_dir,kinematic[0],kinematic[1],0.1)
