@@ -1,10 +1,10 @@
-import pypot.dynamixel
+
 import numpy as np
 import matplotlib.pyplot as plt
 import random
 import time
 
-last_recorded_time = 0
+global last_recorded_time
 
 #ROBOT PROPERTIES
 
@@ -14,28 +14,6 @@ focal_distance = 0.030
 camera_angle = -45
 camera_height = 0.08
 current_pos = [0,0,0]
-
-ports = pypot.dynamixel.get_available_ports()
-if not ports:
-    exit('No port')
-
-#dxl_io = pypot.dynamixel.DxlIO(ports[0])
-#dxl_io.set_wheel_mode([1])
-#dxl_io.set_moving_speed({1: 360}) # Degrees / s
-
-#def move(speed,ratio):
-#    dxl_io.set_wheel_mode([1,2])
-#    dxl_io.set_moving_speed({1: 2*speed*(1-ratio), 2: 2*speed*(ratio)}) # Degrees / s    
-
-#def stop():
-#    dxl_io.set_wheel_mode([1,2])
-#    dxl_io.set_moving_speed({1: 0,2 : 0}) # Degrees / s  
-
-def tic():
-    last_recored_time = time.time()
-
-def toc():
-    return time.time() - last_recorded_time
     
 def direct_kinematics(ws1,ws2): # Wheel Speed 1, Wheel Speed 2
     ws1_ms = (ws1/360)*(2*wheel_radius)*np.pi
@@ -57,23 +35,19 @@ def inverse_kinematics(target_speed,target_angle):
 def odom(x,y,dir,linear_speed,turning_angle,delta):
     differential = odom_differential(linear_speed,turning_angle,delta)
     new_dir = dir + differential[2]
-    new_x = x+differential[0]*np.cos(np.deg2rad(dir))-differential[1]*np.sin(np.deg2rad(dir))
-    new_y = y+differential[0]*np.sin(np.deg2rad(dir))+differential[1]*np.cos(np.deg2rad(dir))
+    new_x = x + differential[0]*np.cos(np.deg2rad(dir))-differential[1]*np.sin(np.deg2rad(dir))
+    new_y = y + differential[0]*np.sin(np.deg2rad(dir))+differential[1]*np.cos(np.deg2rad(dir))
     return [new_x,new_y,new_dir]
 
-def odom_differential(linear_speed,turning_angle,delta,steps = 10):
+def odom_differential(linear_speed,turning_angle,delta,steps = 1):
     dir = 0
     dx = 0
     dy = 0
-    for i in range(1,steps):
+    for i in range(steps):
         dir += turning_angle*(delta/steps)
         dx += linear_speed*np.cos(np.deg2rad(dir))*(delta/steps)
         dy += linear_speed*np.sin(np.deg2rad(dir))*(delta/steps)
     return [dx,dy,dir]
-
-def goto_xya(x,y,a):
-    
-    return
 
 def image_to_robot(u,v):
     x = u-0.5
@@ -97,9 +71,9 @@ def draw_random_trajectory():
     cur_y = logs_y[0]
     cur_dir = logs_dir[0]
 
-    kinematic = direct_kinematics(360,360)
+    kinematic = direct_kinematics(0,360)
     for i in range(1,800):
-        if(i % 25 == 0):
+        if((i % 25 == 0) & False):
             kinematic = direct_kinematics(random.randrange(-5, 5)*180,random.randrange(-5, 5)*180)
             print(kinematic)
         res = odom(cur_x,cur_y,cur_dir,kinematic[0],kinematic[1],0.1)
@@ -113,5 +87,3 @@ def draw_random_trajectory():
     axs.scatter(logs_x,logs_y)
     axs.set_aspect('equal')
     plt.show()
-
-draw_random_trajectory()
