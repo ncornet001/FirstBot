@@ -28,21 +28,18 @@ def inverse_kinematics(target_speed,target_angle):
     ws2 = (target_speed - target_angle*distance_between_wheels/2)/(2*wheel_radius)
     return [ws1,ws2]
 
-def tick_odom(x,y,angle,linear_speed,turning_angle,delta_time):
-    differential = odom(linear_speed,turning_angle,delta_time)
-    new_angle = angle + differential[2]
-    new_x = x + differential[0]*np.cos(np.deg2rad(angle))-differential[1]*np.sin(np.deg2rad(angle))
-    new_y = y + differential[0]*np.sin(np.deg2rad(angle))+differential[1]*np.cos(np.deg2rad(angle))
-    return [new_x,new_y,new_angle]
+def odom(linear_speed,angular_speed,delta_time):
+    dangle = angular_speed*delta_time
+    dx = linear_speed/angular_speed*np.sin(np.deg2rad(dangle))
+    dy = linear_speed/angular_speed*(1-np.cos(np.deg2rad(dangle)))
+    return [dx,dy,dangle]
 
-def odom(linear_speed,turning_angle,delta_time):
-    angle = 0
-    dx = 0
-    dy = 0
-    angle += turning_angle*(delta_time)
-    dx += linear_speed*np.cos(np.deg2rad(angle))*(delta_time)
-    dy += linear_speed*np.sin(np.deg2rad(angle))*(delta_time)
-    return [dx,dy,angle]
+def tick_odom(x,y,angle,linear_speed,angular_speed,delta_time):
+    dx,dy,dangle = odom(linear_speed,angular_speed,delta_time)
+    new_angle = angle + dangle
+    new_x = x + dx*np.cos(np.deg2rad(angle))-dy*np.sin(np.deg2rad(angle))
+    new_y = y + dx*np.sin(np.deg2rad(angle))+dy*np.cos(np.deg2rad(angle))
+    return [new_x,new_y,new_angle]
 
 def image_to_robot(u,v):
     x = u-0.5
