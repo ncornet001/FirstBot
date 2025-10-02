@@ -7,6 +7,11 @@ motor_on = False
 distance_between_wheels = 0.118
 wheel_radius = 0.025
 
+BASE_RIGHT_SPEED = -100
+BASE_LEFT_SPEED = 100
+LEFT_ID = 2
+RIGHT_ID = 1
+
 def direct_kinematics(ws1,ws2): # Wheel Speed 1, Wheel Speed 2
     ws1_ms = (ws1/360)*(2*wheel_radius)*np.pi
     ws2_ms = (ws2/360)*(2*wheel_radius)*np.pi
@@ -41,6 +46,8 @@ def odom_differential(linear_speed,turning_angle,delta,steps = 1):
         dy += linear_speed*np.sin(np.deg2rad(dir))*(delta/steps)
     return [dx,dy,dir]
 
+cur_pos = [0,0,0] # [X, Y, Dir]
+
 def goto(x,y,dir):
     if motor_on:
         dxl_io = setup_motors()
@@ -50,6 +57,11 @@ def goto(x,y,dir):
 
     try:
         while True:
+            #Update current position by odometry
+            wsd = dxl_io.get_moving_speed([LEFT_ID,RIGHT_ID])
+            kinematic = direct_kinematics(wsd[RIGHT_ID], wsd[LEFT_ID])
+            new_position = odom(cur_pos[0],cur_pos[1],cur_pos[2],kinematic[0],kinematic[1])
+
             break
                    
     except KeyboardInterrupt:
