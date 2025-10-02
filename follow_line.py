@@ -20,12 +20,13 @@ BROWN_HIGH = np.array([180, 150, 150]) #to be adjusted
 
 COLORS = [(BLUE_LOW, BLUE_HIGH), (RED_LOW, RED_HIGH), (YELLOW_LOW, YELLOW_HIGH)]
 
-BASE_RIGHT_SPEED = -100
-BASE_LEFT_SPEED = 100
+BASE_SPEED = 0.1
+RIGHT_SPEED_MULT = -1
+LEFT_SPEED_MULT = 1
 LEFT_ID = 2
 RIGHT_ID = 1
 
-ERROR_IMPACT = 0.5
+THETA_CONST = 140 # TODO
 
 display_on = True
 motor_on = False
@@ -76,17 +77,14 @@ def inverse_kinematics(target_speed,target_angle):
     ws2 = 360*(ws2_ms/(2*wheel_radius*np.pi))
     return [ws1,ws2]
 
-def adjust_speed(io, error):
+def adjust_speed(io, error_norm):
 
-    left_speed = BASE_LEFT_SPEED
-    right_speed = BASE_RIGHT_SPEED
+    speed_mult = 1-abs(error_norm)
 
-    if error < 0:
-        left_speed = BASE_LEFT_SPEED*(1-(abs(error)*ERROR_IMPACT))
-    else:
-        right_speed = BASE_RIGHT_SPEED*(1-(error*ERROR_IMPACT))
-
-    io.set_moving_speed({RIGHT_ID: right_speed})
+    left_speed, right_speed = inverse_kinematics(BASE_SPEED*speed_mult, error_norm*THETA_CONST)
+    #print(left_speed)
+    #print(right_speed)
+    io.set_moving_speed({RIGHT_ID: right_speed*RIGHT_SPEED_MULT})
     io.set_moving_speed({LEFT_ID: left_speed})
 
 def display(frame, mask):
@@ -127,6 +125,7 @@ def start():
                 if center is not None:
                     frame_center = frame.shape[1] // 2
                     error = center[0] - frame_center
+
                     error_norm = (error / frame.shape[1])*2
 
                     if motor_on:
@@ -152,7 +151,7 @@ def start():
         print(e)
         if motor_on:
             dxl_io.set_moving_speed({RIGHT_ID: 0, LEFT_ID: 0})
-            
+
     finally:
         capture.release()
         cv2.destroyAllWindows()
