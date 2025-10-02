@@ -91,9 +91,6 @@ def display(frame, mask):
     cv2.imshow("Frame", frame)
     cv2.imshow("Mask",mask)
 
-<<<<<<< HEAD
-def follow_line():
-=======
 def draw_map():
     ws1 = get_present_speed(1)
     ws2 = get_present_speed(2)
@@ -108,7 +105,6 @@ def draw_map():
 
 
 def start():
->>>>>>> ea2b910fba924ac5dcc6688d8390a227f9d9e00a
 
     capture = cv2.VideoCapture(CAMERA_ID)
 
