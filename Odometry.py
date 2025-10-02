@@ -87,3 +87,29 @@ def draw_random_trajectory():
     axs.scatter(logs_x,logs_y)
     axs.set_aspect('equal')
     plt.show()
+
+def draw_trajectory():
+    logs_x = [0]
+    logs_y = [0]
+    logs_dir = [0]
+
+    cur_x = logs_x[0]
+    cur_y = logs_y[0]
+    cur_dir = logs_dir[0]
+
+    kinematic = direct_kinematics(0,360)
+    for i in range(1,800):
+        if((i % 25 == 0)):
+            kinematic = direct_kinematics(random.randrange(-5, 5)*180,random.randrange(-5, 5)*180)
+            print(kinematic)
+        res = odom(cur_x,cur_y,cur_dir,kinematic[0],kinematic[1],0.1)
+        cur_x = res[0]
+        cur_y = res[1]
+        cur_dir = res[2]
+        logs_x.append(cur_x)
+        logs_y.append(cur_y)
+        logs_dir.append(cur_dir)
+    fig, axs = plt.subplots(1, 1)
+    axs.scatter(logs_x,logs_y)
+    axs.set_aspect('equal')
+    plt.show()

@@ -1,6 +1,7 @@
 import cv2
 import datetime
 import numpy as np
+import matplotlib.pyplot as plt
 import pypot.dynamixel
 
 CAMERA_ID = 0
@@ -28,6 +29,7 @@ ERROR_IMPACT = 0.5
 
 display_on = True
 motor_on = False
+map_on = True
 
 distance_between_wheels = 0.118
 wheel_radius = 0.025
