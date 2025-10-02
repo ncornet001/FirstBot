@@ -3,6 +3,7 @@ import datetime
 import numpy as np
 import matplotlib.pyplot as plt
 import pypot.dynamixel
+import Odometry
 
 CAMERA_ID = 0
 
@@ -69,12 +70,16 @@ def setup_motors():
 
     return dxl_io
 
-def inverse_kinematics(target_speed,target_angle):
-    ws1_ms = (distance_between_wheels*np.pi*target_angle/720) + target_speed
-    ws2_ms = -(distance_between_wheels*np.pi*target_angle/720) + target_speed
+def direct_kinematics(ws1,ws2): # Wheel Speed 1, Wheel Speed 2
+    v = wheel_radius/2*(ws1+ws2)*180/np.pi
+    angular_velocity = wheel_radius/distance_between_wheels*(ws1 - ws2)*180/np.pi
+    return[v,angular_velocity]
 
-    ws1 = 360*(ws1_ms/(2*wheel_radius*np.pi))
-    ws2 = 360*(ws2_ms/(2*wheel_radius*np.pi))
+def inverse_kinematics(target_speed,target_angle):
+    target_speed = target_speed*np.pi/180
+    target_angle = target_angle*np.pi/180
+    ws1 = (target_speed + target_angle*distance_between_wheels/2)/(2*wheel_radius)
+    ws2 = (target_speed - target_angle*distance_between_wheels/2)/(2*wheel_radius)
     return [ws1,ws2]
 
 def adjust_speed(io, error_norm):
@@ -90,18 +95,6 @@ def adjust_speed(io, error_norm):
 def display(frame, mask):
     cv2.imshow("Frame", frame)
     cv2.imshow("Mask",mask)
-
-def draw_map():
-    ws1 = get_present_speed(1)
-    ws2 = get_present_speed(2)
-    
-    X=[]
-    Y=[]
-
-    while start():
-        aze
-
-    return(X,Y)
 
 
 def start():
