@@ -16,19 +16,15 @@ LEFT_ID = 2
 RIGHT_ID = 1
 
 def direct_kinematics(ws1,ws2): # Wheel Speed 1, Wheel Speed 2
-    ws1_ms = (ws1/360)*(2*wheel_radius)*np.pi
-    ws2_ms = (ws2/360)*(2*wheel_radius)*np.pi
-
-    turning_angle = (ws1_ms/((2*distance_between_wheels)*np.pi)) * 360 -(ws2_ms/((2*distance_between_wheels)*np.pi)) * 360
-    linear_speed = (ws1_ms + ws2_ms)/2
-    return [linear_speed,turning_angle]
+    v = wheel_radius/2*(ws1+ws2)*180/np.pi
+    angular_velocity = wheel_radius/distance_between_wheels*(ws1 - ws2)*180/np.pi
+    return[v,angular_velocity]
 
 def inverse_kinematics(target_speed,target_angle):
-    ws1_ms = (distance_between_wheels*np.pi*target_angle/360) + target_speed
-    ws2_ms = -(distance_between_wheels*np.pi*target_angle/360) + target_speed
-
-    ws1 = 360*(ws1_ms/(2*wheel_radius*np.pi))
-    ws2 = 360*(ws2_ms/(2*wheel_radius*np.pi))
+    target_speed = target_speed*np.pi/180
+    target_angle = target_angle*np.pi/180
+    ws1 = (target_speed + target_angle*distance_between_wheels/2)/(2*wheel_radius)
+    ws2 = (target_speed - target_angle*distance_between_wheels/2)/(2*wheel_radius)
     return [ws1,ws2]
 
 def odom(x,y,dir,linear_speed,turning_angle,delta):
