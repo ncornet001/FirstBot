@@ -47,11 +47,15 @@ class FollowLine():
         pass
         # if(self.detect_color(hsv,BROWN_LOW,BROWN_HIGH)):
         #     if(not seen_brown_last_frame):
-        #         color_index = color_index+1//3
+        #         color_index = color_index+1
+        #         if color_index > len(COLORS)-1:
+        #             return 1
+        
         #     seen_brown_last_frame = True
         # else:
         #     seen_brown_last_frame = False
         # print("color index : ",color_index)
+        # return 0
 
     def get_direction(self): 
         ret, frame = self.camera.read_frame()
@@ -82,9 +86,11 @@ class FollowLine():
         return 0,0
         
 
-    def detect_color(self,hsv,color_low,color_high,pixel_amount_threshold = 80):
-        mask = cv2.inRange(hsv,color_low,color_high)
-        return np.sum(mask) > (pixel_amount_threshold*255)
+    def detect_color(self,hsv,color_low,color_high, percentage_threshold=0.3):
+        mask = cv2.inRange(hsv, color_low, color_high)
+        color_pixels = cv2.countNonZero(mask)
+        total_pixels = mask.size
+        return (color_pixels / total_pixels) > percentage_threshold
 
     def start(self):
         try:
