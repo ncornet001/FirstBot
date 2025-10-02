@@ -5,6 +5,7 @@ import numpy as np
 import pypot.dynamixel
 import Odometry
 import time
+import map
 
 CAMERA_ID = 0
 
@@ -22,7 +23,7 @@ BROWN_HIGH = np.array([180, 150, 150]) #to be adjusted
 
 COLORS = [(YELLOW_LOW, YELLOW_HIGH), (BLUE_LOW, BLUE_HIGH), (RED_LOW, RED_HIGH),(BROWN_LOW, BROWN_HIGH)]
 
-BASE_SPEED = 0.2
+BASE_SPEED = 0.4
 RIGHT_SPEED_MULT = -1
 LEFT_SPEED_MULT = 1
 LEFT_ID = 2
@@ -32,9 +33,9 @@ THETA_CONST = 140 # TODO
 
 BROWN_SEEN_COOLDOWN = 5
 
-display_on = True
-motor_on = False
-map_on = False
+display_on = False
+motor_on = True
+map_on = True
 
 distance_between_wheels = 0.118
 wheel_radius = 0.025
@@ -61,7 +62,7 @@ def get_line_mask(hsv, color_low, color_high):
     mask = cv2.inRange(hsv, color_low, color_high)
     return mask
 
-def detect_color(hsv,color_low,color_high,pixel_amount_threshold = 4096):
+def detect_color(hsv,color_low,color_high,pixel_amount_threshold = 5):
     mask = cv2.inRange(hsv,color_low,color_high)
     return np.sum(mask) > (pixel_amount_threshold*255)
 
@@ -87,7 +88,7 @@ def inverse_kinematics(target_speed,target_angle):
     ws2 = (180/np.pi)*(target_speed - target_angle*distance_between_wheels/2)/(2*wheel_radius)
     return [ws1,ws2]
 
-def adjust_speed(io, error_norm):
+def adjust_speed(io, error_norm,delta_time):
 
     speed_mult = 1-abs(error_norm)
 
@@ -96,6 +97,8 @@ def adjust_speed(io, error_norm):
     #print(right_speed)
     io.set_moving_speed({RIGHT_ID: right_speed*RIGHT_SPEED_MULT})
     io.set_moving_speed({LEFT_ID: left_speed})
+    if(map_on):
+        map.record_new_wheel_movement(right_speed,left_speed,delta_time)
 
 def display(frame, mask):
     cv2.imshow("Frame", frame)
@@ -108,14 +111,13 @@ def start():
 
     if motor_on:
         dxl_io = setup_motors()
-    color_index = 0
-
-    start_time = datetime.datetime.now()
-
+    color_index = 1
+    last_frame_time = time.time() - 0.001
     try:
         last_brown_seen = time.time()
         while True:
-
+            delta_time = time.time() - last_frame_time
+            last_frame_time = time.time()
             current_low, current_high = COLORS[color_index]
 
             ret, frame = capture.read()
@@ -131,7 +133,7 @@ def start():
 
             if(detect_color(hsv,BROWN_LOW,BROWN_HIGH)):
                 if(time.time() - last_brown_seen > BROWN_SEEN_COOLDOWN):
-                    color_index = min(2,color_index+1)
+                    #color_index = min(2,color_index+1)
                     print("Seen brown !")
                 last_brown_seen = time.time()
         
@@ -147,7 +149,7 @@ def start():
                     error_norm = (error / frame.shape[1])*2
 
                     if motor_on:
-                        adjust_speed(dxl_io, error_norm)
+                        adjust_speed(dxl_io, error_norm,delta_time)
 
                     if display_on:
                         cv2.putText(frame, f"ErrorNorm: {error_norm}", (10, 15),
@@ -166,6 +168,7 @@ def start():
             dxl_io.set_moving_speed({RIGHT_ID: 0, LEFT_ID: 0})
 
     except Exception as e:
+        e.stacktrace()
         print(e)
         if motor_on:
             dxl_io.set_moving_speed({RIGHT_ID: 0, LEFT_ID: 0})
@@ -175,3 +178,5 @@ def start():
         cv2.destroyAllWindows()
 
 start()
+if(map_on):
+    map.draw_map()

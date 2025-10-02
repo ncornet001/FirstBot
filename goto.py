@@ -2,7 +2,7 @@ import datetime
 import numpy as np
 import pypot.dynamixel
 import time
-#import map
+import map
 
 motor_on = True
 map_on = True
@@ -24,7 +24,7 @@ def direct_kinematics(ws1,ws2): # Wheel Speed 1, Wheel Speed 2
 def inverse_kinematics(target_speed,target_angle):
     target_angle = target_angle*np.pi/180
     ws1 = (180/np.pi)*(target_speed + target_angle*distance_between_wheels/2)/(2*wheel_radius)
-    ws2 = (180/np.pi)(target_speed - target_angle*distance_between_wheels/2)/(2*wheel_radius)
+    ws2 = (180/np.pi)*(target_speed - target_angle*distance_between_wheels/2)/(2*wheel_radius)
     return [ws1,ws2]
 
 def odom(x,y,dir,linear_speed,turning_angle,delta):
@@ -109,7 +109,7 @@ def goto(x,y,dir):
             wsd = dxl_io.get_moving_speed([LEFT_ID,RIGHT_ID])
 
             if(map_on):
-                map.record_new_position(delta_time)
+                map.record_new_position(cur_pos[0],cur_pos[1])
 
             kinematic = direct_kinematics(wsd[1]*RIGHT_SPEED_MULT, wsd[0])
             new_position = odom(cur_pos[0],cur_pos[1],cur_pos[2],kinematic[0],kinematic[1],delta_time)
@@ -120,22 +120,23 @@ def goto(x,y,dir):
             dy = target_pos[1] - cur_pos[1]
 
             dir_to_target = vec_angle(dx,dy) #The angle toward the target
-
             distance_to_target = vec_length(dx,dy)
 
             ddir = angle_distance(cur_pos[2],target_pos[2])
             ddir_to_target = angle_distance(cur_pos[2],dir_to_target)
             print(ddir)
+            print(ddir_to_target)
+            print("response :",BASE_TURN_SPEED*sign(ddir_to_target)*clamp(abs(ddir_to_target)/45,0.2,1))
             if(distance_to_target >= distance_threshold):
                 #Reach position
                 speed_mult = clamp(1-(abs(ddir_to_target)/45),0,1)
                 angle_mult = clamp(abs(ddir_to_target)/45,0.2,1)
-                set_target_kinematic(dxl_io,BASE_SPEED*speed_mult,BASE_TURN_SPEED*sign(ddir_to_target)*angle_mult)
+                set_target_kinematic(dxl_io,BASE_SPEED*speed_mult,BASE_TURN_SPEED*-sign(ddir_to_target)*angle_mult)
             else:
                 #Final rotation
                 if(ddir > angle_threshold):
                     angle_mult = clamp(abs(ddir)/45,0.2,1)
-                    set_target_kinematic(dxl_io,0,BASE_TURN_SPEED*sign(ddir)*angle_mult)
+                    set_target_kinematic(dxl_io,0,BASE_TURN_SPEED*-sign(ddir)*angle_mult)
 
             
             if((distance_to_target <= distance_threshold) & (abs(ddir) <= angle_threshold)):
@@ -149,7 +150,10 @@ def goto(x,y,dir):
             dxl_io.set_moving_speed({RIGHT_ID: 0, LEFT_ID: 0})
 
     except Exception as e:
+        e.stacktrace()
         print(e)
         if motor_on:
             dxl_io.set_moving_speed({RIGHT_ID: 0, LEFT_ID: 0})
-goto(0,0,120)
+goto(0,0.5,120)
+if(map_on):
+    map.draw_map()

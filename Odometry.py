@@ -30,8 +30,12 @@ def inverse_kinematics(target_speed,target_angle):
 
 def odom(linear_speed,angular_speed,delta_time):
     dangle = angular_speed*delta_time
-    dx = linear_speed/angular_speed*np.sin(np.deg2rad(dangle))
-    dy = linear_speed/angular_speed*(1-np.cos(np.deg2rad(dangle)))
+    if(dangle == 0):
+        dx = linear_speed*delta_time
+        dy = 0
+    else:
+        dx = linear_speed/angular_speed*np.sin(np.deg2rad(dangle))
+        dy = linear_speed/angular_speed*(1-np.cos(np.deg2rad(dangle)))
     return [dx,dy,dangle]
 
 def tick_odom(x,y,angle,linear_speed,angular_speed,delta_time):
