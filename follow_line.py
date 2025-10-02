@@ -1,7 +1,7 @@
 import cv2
 import datetime
 import numpy as np
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import pypot.dynamixel
 import Odometry
 
@@ -29,9 +29,9 @@ RIGHT_ID = 1
 
 THETA_CONST = 140 # TODO
 
-display_on = True
-motor_on = False
-map_on = True
+display_on = False
+motor_on = True
+map_on = False
 
 distance_between_wheels = 0.118
 wheel_radius = 0.025
@@ -75,15 +75,14 @@ def setup_motors():
     return dxl_io
 
 def direct_kinematics(ws1,ws2): # Wheel Speed 1, Wheel Speed 2
-    v = wheel_radius/2*(ws1+ws2)*180/np.pi
-    angular_velocity = wheel_radius/distance_between_wheels*(ws1 - ws2)*180/np.pi
+    v = wheel_radius*(ws1+ws2)/2*(np.pi/180)
+    angular_velocity = (wheel_radius/distance_between_wheels) * (ws1 - ws2)
     return[v,angular_velocity]
 
 def inverse_kinematics(target_speed,target_angle):
-    target_speed = target_speed*np.pi/180
     target_angle = target_angle*np.pi/180
-    ws1 = (target_speed + target_angle*distance_between_wheels/2)/(2*wheel_radius)
-    ws2 = (target_speed - target_angle*distance_between_wheels/2)/(2*wheel_radius)
+    ws1 = (180/np.pi)*(target_speed + target_angle*distance_between_wheels/2)/(2*wheel_radius)
+    ws2 = (180/np.pi)*(target_speed - target_angle*distance_between_wheels/2)/(2*wheel_radius)
     return [ws1,ws2]
 
 def adjust_speed(io, error_norm):
@@ -134,7 +133,7 @@ def start():
                 seen_brown_last_frame = True
             else:
                 seen_brown_last_frame = False
-
+            print("color index : ",color_index)
             mask = get_line_mask(hsv, current_low, current_high)
             contour = get_biggest_contour(mask)
 

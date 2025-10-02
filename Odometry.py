@@ -1,6 +1,6 @@
 
 import numpy as np
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import random
 import time
 
@@ -105,7 +105,7 @@ def draw_trajectory():
         logs_x.append(cur_x)
         logs_y.append(cur_y)
         logs_angle.append(cur_angle)
-    fig, axs = plt.subplots(1, 1)
-    axs.scatter(logs_x,logs_y)
-    axs.set_aspect('equal')
-    plt.show()
+#    fig, axs = plt.subplots(1, 1)
+ #   axs.scatter(logs_x,logs_y)
+  #  axs.set_aspect('equal')
+   # plt.show()

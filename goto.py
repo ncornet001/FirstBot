@@ -2,7 +2,7 @@ import datetime
 import numpy as np
 import pypot.dynamixel
 import time
-import map
+#import map
 
 motor_on = True
 map_on = True
@@ -16,17 +16,15 @@ RIGHT_SPEED_MULT = -1
 LEFT_SPEED_MULT = 1
 LEFT_ID = 2
 RIGHT_ID = 1
-
 def direct_kinematics(ws1,ws2): # Wheel Speed 1, Wheel Speed 2
-    v = wheel_radius/2*(ws1+ws2)*180/np.pi
-    angular_velocity = wheel_radius/distance_between_wheels*(ws1 - ws2)*180/np.pi
+    v = wheel_radius*(ws1+ws2)/2*(np.pi/180)
+    angular_velocity = (wheel_radius/distance_between_wheels) * (ws1 - ws2)
     return[v,angular_velocity]
 
 def inverse_kinematics(target_speed,target_angle):
-    target_speed = target_speed*np.pi/180
     target_angle = target_angle*np.pi/180
-    ws1 = (target_speed + target_angle*distance_between_wheels/2)/(2*wheel_radius)
-    ws2 = (target_speed - target_angle*distance_between_wheels/2)/(2*wheel_radius)
+    ws1 = (180/np.pi)*(target_speed + target_angle*distance_between_wheels/2)/(2*wheel_radius)
+    ws2 = (180/np.pi)(target_speed - target_angle*distance_between_wheels/2)/(2*wheel_radius)
     return [ws1,ws2]
 
 def odom(x,y,dir,linear_speed,turning_angle,delta):
@@ -136,8 +134,8 @@ def goto(x,y,dir):
             else:
                 #Final rotation
                 if(ddir > angle_threshold):
-                    angle_mult = clamp(abs(ddir_to_target)/45,0.2,1)
-                    set_target_kinematic(dxl_io,0,BASE_TURN_SPEED*sign(ddir_to_target)*angle_mult)
+                    angle_mult = clamp(abs(ddir)/45,0.2,1)
+                    set_target_kinematic(dxl_io,0,BASE_TURN_SPEED*sign(ddir)*angle_mult)
 
             
             if((distance_to_target <= distance_threshold) & (abs(ddir) <= angle_threshold)):
