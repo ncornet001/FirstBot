@@ -21,7 +21,7 @@ BROWN_HIGH = np.array([180, 150, 150]) #to be adjusted
 
 COLORS = [(BLUE_LOW, BLUE_HIGH), (RED_LOW, RED_HIGH), (YELLOW_LOW, YELLOW_HIGH)]
 
-BASE_SPEED = 0.1
+BASE_SPEED = 0.2
 RIGHT_SPEED_MULT = -1
 LEFT_SPEED_MULT = 1
 LEFT_ID = 2
@@ -162,4 +162,4 @@ def start():
         capture.release()
         cv2.destroyAllWindows()
 
-start()
+follow_line()

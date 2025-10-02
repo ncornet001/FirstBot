@@ -1,14 +1,17 @@
 import datetime
 import numpy as np
 import pypot.dynamixel
+import time
 
-motor_on = False
+motor_on = True
 
 distance_between_wheels = 0.118
 wheel_radius = 0.025
 
-BASE_RIGHT_SPEED = -100
-BASE_LEFT_SPEED = 100
+BASE_SPEED = 0.2
+BASE_TURN_SPEED = 120
+RIGHT_SPEED_MULT = -1
+LEFT_SPEED_MULT = 1
 LEFT_ID = 2
 RIGHT_ID = 1
 
@@ -41,23 +44,103 @@ def odom_differential(linear_speed,turning_angle,delta,steps = 1):
         dy += linear_speed*np.sin(np.deg2rad(dir))*(delta/steps)
     return [dx,dy,dir]
 
-cur_pos = [0,0,0] # [X, Y, Dir]
+
+def set_target_kinematic(io,speed,angle):
+    left_speed, right_speed = inverse_kinematics(speed, angle)
+    io.set_moving_speed({RIGHT_ID: right_speed*RIGHT_SPEED_MULT})
+    io.set_moving_speed({LEFT_ID: left_speed})
+
+
+def setup_motors():
+    ports = pypot.dynamixel.get_available_ports()
+    print(ports)
+    if not ports:
+        exit('No motor port')
+
+    dxl_io = pypot.dynamixel.DxlIO(ports[0])
+    dxl_io.set_wheel_mode([RIGHT_ID, LEFT_ID])
+
+    return dxl_io
+
+def vec_angle(x,y):
+    if((x == 0) & (y == 0)):
+        return 0
+    if(y < 0):
+        return -180*np.arccos(x/vec_length(x,y))/np.pi
+    else:
+        return 180*np.arccos(x/vec_length(x,y))/np.pi
+    
+def angle_distance(angle1, angle2):
+    diff = (angle2 - angle1 + 180) % 360 - 180
+    return diff
+
+def vec_length(x,y):
+    return np.sqrt(x*x + y*y)
+
+def clamp(x,mini,maxi):
+    return min(maxi,max(mini,x))
+
+def sign(x):
+    if(x>0):
+        return 1
+    elif(x<0):
+        return -1
+    return 0
+
+
+
 
 def goto(x,y,dir):
+    distance_threshold = 0.05
+    angle_threshold = 0.1
+
     if motor_on:
         dxl_io = setup_motors()
-    color_index = 0
+    cur_pos = [0,0,0] # [X, Y, Dir]
+    target_pos = [x,y,dir]
 
-    start_time = datetime.datetime.now()
+    elapsed_time = 0
 
+    last_frame_time = time.time()
     try:
         while True:
+            delta_time = time.time() - last_frame_time
+            last_frame_time = time.time()
+            elapsed_time += delta_time
+            
             #Update current position by odometry
             wsd = dxl_io.get_moving_speed([LEFT_ID,RIGHT_ID])
-            kinematic = direct_kinematics(wsd[RIGHT_ID], wsd[LEFT_ID])
-            new_position = odom(cur_pos[0],cur_pos[1],cur_pos[2],kinematic[0],kinematic[1])
+            kinematic = direct_kinematics(wsd[1]*RIGHT_SPEED_MULT, wsd[0])
+            new_position = odom(cur_pos[0],cur_pos[1],cur_pos[2],kinematic[0],kinematic[1],delta_time)
+            cur_pos = new_position
+            print(cur_pos)
 
-            break
+            dx = target_pos[0] - cur_pos[0]
+            dy = target_pos[1] - cur_pos[1]
+
+            dir_to_target = vec_angle(dx,dy) #The angle toward the target
+
+            distance_to_target = vec_length(dx,dy)
+
+            ddir = angle_distance(cur_pos[2],target_pos[2])
+            ddir_to_target = angle_distance(cur_pos[2],dir_to_target)
+            print(ddir)
+            if(distance_to_target >= distance_threshold):
+                #Reach position
+                speed_mult = clamp(1-(abs(ddir_to_target)/45),0,1)
+                angle_mult = clamp(abs(ddir_to_target)/45,0.2,1)
+                set_target_kinematic(dxl_io,BASE_SPEED*speed_mult,BASE_TURN_SPEED*sign(ddir_to_target)*angle_mult)
+            else:
+                #Final rotation
+                if(ddir > angle_threshold):
+                    angle_mult = clamp(abs(ddir_to_target)/45,0.2,1)
+                    set_target_kinematic(dxl_io,0,BASE_TURN_SPEED*sign(ddir_to_target)*angle_mult)
+
+            
+            if((distance_to_target <= distance_threshold) & (abs(ddir) <= angle_threshold)):
+                print("Target reached!")
+                dxl_io.set_moving_speed({RIGHT_ID: 0, LEFT_ID: 0})
+                break
                    
     except KeyboardInterrupt:
         print("Stopping motors due to Ctrl+C...")
@@ -68,4 +151,4 @@ def goto(x,y,dir):
         print(e)
         if motor_on:
             dxl_io.set_moving_speed({RIGHT_ID: 0, LEFT_ID: 0})
-            
+goto(0,0,120)

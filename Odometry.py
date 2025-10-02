@@ -80,6 +80,28 @@ def draw_random_trajectory():
     axs.set_aspect('equal')
     plt.show()
 
+def angle_distance(a,b):
+    phi = abs(b-a) % 360
+    sign = 1
+    # used to calculate sign
+    if not ((a-b >= 0 and a-b <= 180) or (
+            a-b <= -180 and a-b >= -360)):
+        sign = -1
+    if phi > 180:
+        result = 360-phi
+    else:
+        result = phi
+
+    return result*sign
+
+def angle_difference(angle1, angle2):
+    diff = abs(angle1 - angle2) % 360
+    return min(diff, 360 - diff)
+
+def signed_angle_difference(angle1, angle2):
+    diff = (angle2 - angle1 + 180) % 360 - 180
+    return diff
+
 def draw_trajectory():
     logs_x = [0]
     logs_y = [0]
