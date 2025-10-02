@@ -18,7 +18,7 @@ YELLOW_HIGH = np.array([85, 255, 255])
 BROWN_LOW = np.array([0, 0, 0])
 BROWN_HIGH = np.array([180, 150, 150]) #to be adjusted
 
-COLORS = [(BLUE_LOW, BLUE_HIGH), (RED_LOW, RED_HIGH), (YELLOW_LOW, YELLOW_HIGH)]
+COLORS = [(YELLOW_LOW, YELLOW_HIGH), (BLUE_LOW, BLUE_HIGH), (RED_LOW, RED_HIGH)]
 
 BASE_SPEED = 0.2
 RIGHT_SPEED_MULT = -1
@@ -57,6 +57,10 @@ def get_line_mask(hsv, color_low, color_high):
     mask = cv2.inRange(hsv, color_low, color_high)
 
     return mask
+
+def detect_color(hsv,color_low,color_high):
+    mask = cv2.inRange(hsv,color_low,color_high)
+    return np.any(mask > 0)
 
 def setup_motors():
     ports = pypot.dynamixel.get_available_ports()
@@ -115,6 +119,7 @@ def start():
     start_time = datetime.datetime.now()
 
     try:
+        seen_brown_last_frame = False
         while True:
 
             current_low, current_high = COLORS[color_index]
@@ -129,6 +134,13 @@ def start():
             #frame = frame[frame.shape[0]-20:, :, :]
 
             hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+
+            if(detect_color(hsv,BROWN_LOW,BROWN_HIGH)):
+                if(not seen_brown_last_frame):
+                    color_index = min(2,color_index+1)
+                seen_brown_last_frame = True
+            else:
+                seen_brown_last_frame = False
 
             mask = get_line_mask(hsv, current_low, current_high)
             contour = get_biggest_contour(mask)
@@ -169,4 +181,4 @@ def start():
         capture.release()
         cv2.destroyAllWindows()
 
-follow_line()
+start()

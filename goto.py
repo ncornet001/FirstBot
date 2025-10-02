@@ -87,9 +87,6 @@ def sign(x):
         return -1
     return 0
 
-
-
-
 def goto(x,y,dir):
     distance_threshold = 0.05
     angle_threshold = 0.1
