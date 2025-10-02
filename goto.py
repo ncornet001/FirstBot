@@ -2,8 +2,10 @@ import datetime
 import numpy as np
 import pypot.dynamixel
 import time
+import map
 
 motor_on = True
+map_on = True
 
 distance_between_wheels = 0.118
 wheel_radius = 0.025
@@ -107,6 +109,10 @@ def goto(x,y,dir):
             
             #Update current position by odometry
             wsd = dxl_io.get_moving_speed([LEFT_ID,RIGHT_ID])
+
+            if(map_on):
+                map.record_new_position(delta_time)
+
             kinematic = direct_kinematics(wsd[1]*RIGHT_SPEED_MULT, wsd[0])
             new_position = odom(cur_pos[0],cur_pos[1],cur_pos[2],kinematic[0],kinematic[1],delta_time)
             cur_pos = new_position
