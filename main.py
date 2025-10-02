@@ -1,94 +1,87 @@
 import argparse
-import modules.Camera as Camera
-from modules.Controls import MotorController
-from modules.NewOdometry import Odometry
-from goals.line_detection import FollowLine
-import goals.goto as goto
+import datetime
+from modules.camera import Camera
+from modules.motor_controller import MotorController
+from modules.odometry import Odometry
+from goals.follow_line import FollowLine  
+from goals.go_to import GoTo
+from goals.passive_mode import PassiveMode
 
 def main():
-    
-    # Parser les arguments
-    parser = argparse.ArgumentParser(description='Contrôle du robot avec goals multiples')
-    parser.add_argument('--follow-line', action='store_true', help='Activer le suivi de ligne')
+    # Parse arguments
+    parser = argparse.ArgumentParser(description='Robot control with multiple goals')
+    parser.add_argument('--follow-line', action='store_true', help='Enable line following')
     parser.add_argument('--goto', nargs=3, type=float, metavar=('X', 'Y', 'ANGLE'),
-                       help='Naviguer vers la position (X, Y) et s\'aligner sur un angle donné')
+                       help='Navigate to position (X, Y) and align to given angle')
+    parser.add_argument('--passive-mode', action='store_true', 
+                       help='Passive mode - track position during manual movement')
 
     args = parser.parse_args()
     print(args)
 
 
     # check if there isn't several arguments
-    if (args.follow_line and args.goto):
-        print('Trop de Goal!')
+    goal_count = sum([args.follow_line, bool(args.goto), args.passive_mode])
+    if goal_count > 1:
+        print('Too many goals! Only one at a time.')
         exit(1)
 
-    if not any([args.follow_line, args.goto]):
+    if goal_count == 0:
         args.follow_line = True
-        print("Aucun goal spécifié, activation du suivi de ligne par défaut")
+        print("No goal specified, activating line following by default")
     
     print("=" * 50)
-    print("INITIALISATION DU ROBOT")
+    print("ROBOT INITIALIZATION")
     print("=" * 50)
 
     try : 
-        Camera.setup()
+        camera = Camera()
+        camera.setup()
         motors = MotorController()
         motors.setup_motors()
         odometry = Odometry()
         odometry.reset()
+        
+        odometry.start_thread(motors, frequency=100)
+        print("Odometry thread started at 100Hz")
+        
     except Exception as e:
-        print(f"Erreur d'initialisation: {e}")
+        print(f"Initialization error: {e}")
         return 1
     
     print("\n" + "=" * 50)
-    print("DÉMARRAGE DES GOALS")
+    print("STARTING GOALS")
     print("=" * 50)
 
     if args.follow_line:
-        fl = FollowLine(motors, odometry)
+        fl = FollowLine(motors, camera)
         fl.start()
+        odometry.save_map("maps/follow_line_map_"+datetime.now().strftime("%Y%m%d_%H%M%S")+".png")
 
     elif args.goto:
         print('going to :', args.goto[0], args.goto[1], args.goto[2])
-        goto.start(motors,args.goto[0], args.goto[1], args.goto[2])
+        gt = GoTo(motors, odometry)
+        gt.set_target(args.goto[0], args.goto[1], args.goto[2])
+        gt.start()
+        odometry.save_map("maps/go_to_map_"+datetime.now().strftime("%Y%m%d_%H%M%S")+".png")
+
+    elif args.passive_mode:
+        print('Activating passive mode')
+        pm = PassiveMode(motors, odometry)
+        pm.start()
+        odometry.save_map("maps/passive_mode_map_"+datetime.now().strftime("%Y%m%d_%H%M%S")+".png")
 
     else:
-        print("Aucun goal activé.")
-
-    # try:
-    #     while True:
-    #         # odometry
-    #         linear_speed, angular_speed = motors.get_speed()
-    #         odometry.odom(linear_speed, angular_speed)
-
-    #         # calcul de vitesses selon le mode selectionner
-    #         linear_speed, angular_speed = 
-    #         if args.follow_line:
-    #             linear_speed, angular_speed = fl.get_direction(odometry)
-
-    #         elif args.goto:
-    #             print('going to :', args.goto[0], args.goto[1], args.goto[2])
-    #             goto.start(motors,args.goto[0], args.goto[1], args.goto[2])
-
-    #         else:
-    #             print("Aucun goal activé.")
-
-
-    #         # donner aux controller les infos 
-    #         motors.move(linear_speed, angular_speed)
-
-    # except KeyboardInterrupt:
-    #     print("Stopping motors due to Ctrl+C...")
-    #     motors.stop()
-
-    # except Exception as e:
-    #     motors.stop()
-    #     print(e)
+        print("No goal activated.")
+        return 1
     
-    print("\nArrêt en cours...")
+    print("\nStopping...")
+    
+    odometry.stop_thread()
+    
     motors.stop()
-    Camera.release()
-    print("Robot arrêté")
+    camera.release()
+    print("Robot stopped")
     return 0
 
 main()

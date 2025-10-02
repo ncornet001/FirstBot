@@ -2,9 +2,8 @@ import cv2
 import datetime
 import numpy as np
 import matplotlib.pyplot as plt
-from modules.Controls import MotorController
-import modules.NewOdometry as Odometry
-import modules.Camera as Camera
+from modules.motor_controller import MotorController
+from modules.camera import Camera
 
 # CAMERA_ID = 0
 
@@ -38,10 +37,11 @@ distance_between_wheels = 0.118
 wheel_radius = 0.025
   
 class FollowLine():
-    def __init__(self, motors, odometry):
+    def __init__(self, motors, camera):
         self.motors:MotorController = motors
-        self.odometry:Odometry = odometry
+        self.camera:Camera = camera
         self.current_color_index = 0
+        self.frame_count = 0
 
     def check_color_line(self, hsv):
         pass
@@ -54,7 +54,7 @@ class FollowLine():
         # print("color index : ",color_index)
 
     def get_direction(self): 
-        ret, frame = Camera.read_frame()
+        ret, frame = self.camera.read_frame()
         current_low, current_high = COLORS[self.current_color_index]
 
         if not ret:
@@ -87,12 +87,11 @@ class FollowLine():
         return np.sum(mask) > (pixel_amount_threshold*255)
 
     def start(self):
-        self.motors.setup_motors()
-        Camera.setup()
         try:
             while True:
+                self.frame_count += 1
                 current_low, current_high = COLORS[self.current_color_index]
-                ret, frame = Camera.read_frame()
+                ret, frame = self.camera.read_frame()
 
                 if not ret:
                     print("No frame received")
@@ -123,9 +122,6 @@ class FollowLine():
                         error_norm = (error / frame.shape[1])*2
 
                         speed_mult = 1-abs(error_norm)
-                        linear_speed, angular_speed = self.motors.get_speed()
-                        self.odometry.update_odometry(linear_speed, angular_speed)
-
                         self.motors.move(speed_mult, error_norm*THETA_CONST)
 
                         if display_on:
@@ -152,7 +148,6 @@ class FollowLine():
             return 1
 
         finally:
-            Camera.release()
             self.motors.stop()
 
 
