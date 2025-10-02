@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pypot.dynamixel
 import Odometry
+from datetime import datetime
 
 X = [0]
 Y = [0]
@@ -18,8 +19,15 @@ def record_new_wheel_movement(ws1,ws2,delta_time):
     X.append(new_x)
     Y.append(new_y)
 
+def record_reset():
+    X = [0]
+    Y = [0]
+    angle = 0
+
 def draw_map():
-    fig, axs = plt.subplots(1, 1)
-    axs.scatter(X,Y)
-    axs.set_aspect('equal')
-    plt.show()
+    plt.plot(X,Y)
+    plt.axis('equal')
+    plt.xlabel("x [meters]")
+    plt.ylabel("y [meters]")
+    plt.savefig("map" + datetime.today().strftime('%Y-%m-%d_%H-%M-%S')+".png")
+    #plt.show()

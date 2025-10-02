@@ -4,6 +4,7 @@ import numpy as np
 #import matplotlib.pyplot as plt
 import pypot.dynamixel
 import Odometry
+import time
 
 CAMERA_ID = 0
 
@@ -19,7 +20,7 @@ YELLOW_HIGH = np.array([85, 255, 255])
 BROWN_LOW = np.array([0, 0, 0])
 BROWN_HIGH = np.array([180, 150, 150]) #to be adjusted
 
-COLORS = [(YELLOW_LOW, YELLOW_HIGH), (BLUE_LOW, BLUE_HIGH), (RED_LOW, RED_HIGH)]
+COLORS = [(YELLOW_LOW, YELLOW_HIGH), (BLUE_LOW, BLUE_HIGH), (RED_LOW, RED_HIGH),(BROWN_LOW, BROWN_HIGH)]
 
 BASE_SPEED = 0.2
 RIGHT_SPEED_MULT = -1
@@ -29,8 +30,10 @@ RIGHT_ID = 1
 
 THETA_CONST = 140 # TODO
 
-display_on = False
-motor_on = True
+BROWN_SEEN_COOLDOWN = 5
+
+display_on = True
+motor_on = False
 map_on = False
 
 distance_between_wheels = 0.118
@@ -56,12 +59,11 @@ def get_biggest_contour(mask):
 
 def get_line_mask(hsv, color_low, color_high):
     mask = cv2.inRange(hsv, color_low, color_high)
-
     return mask
 
-def detect_color(hsv,color_low,color_high):
+def detect_color(hsv,color_low,color_high,pixel_amount_threshold = 4096):
     mask = cv2.inRange(hsv,color_low,color_high)
-    return np.any(mask > 0)
+    return np.sum(mask) > (pixel_amount_threshold*255)
 
 def setup_motors():
     ports = pypot.dynamixel.get_available_ports()
@@ -111,7 +113,7 @@ def start():
     start_time = datetime.datetime.now()
 
     try:
-        seen_brown_last_frame = False
+        last_brown_seen = time.time()
         while True:
 
             current_low, current_high = COLORS[color_index]
@@ -128,12 +130,11 @@ def start():
             hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
             if(detect_color(hsv,BROWN_LOW,BROWN_HIGH)):
-                if(not seen_brown_last_frame):
+                if(time.time() - last_brown_seen > BROWN_SEEN_COOLDOWN):
                     color_index = min(2,color_index+1)
-                seen_brown_last_frame = True
-            else:
-                seen_brown_last_frame = False
-            print("color index : ",color_index)
+                    print("Seen brown !")
+                last_brown_seen = time.time()
+        
             mask = get_line_mask(hsv, current_low, current_high)
             contour = get_biggest_contour(mask)
 
