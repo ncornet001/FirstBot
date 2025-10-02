@@ -20,7 +20,7 @@ BROWN_HIGH = np.array([180, 150, 150]) #to be adjusted
 
 COLORS = [(BLUE_LOW, BLUE_HIGH), (RED_LOW, RED_HIGH), (YELLOW_LOW, YELLOW_HIGH)]
 
-BASE_SPEED = 0.1
+BASE_SPEED = 0.2
 RIGHT_SPEED_MULT = -1
 LEFT_SPEED_MULT = 1
 LEFT_ID = 2
@@ -70,8 +70,8 @@ def setup_motors():
     return dxl_io
 
 def inverse_kinematics(target_speed,target_angle):
-    ws1_ms = (distance_between_wheels*np.pi*target_angle/720) + target_speed
-    ws2_ms = -(distance_between_wheels*np.pi*target_angle/720) + target_speed
+    ws1_ms = (distance_between_wheels*np.pi*target_angle/360) + target_speed
+    ws2_ms = -(distance_between_wheels*np.pi*target_angle/360) + target_speed
 
     ws1 = 360*(ws1_ms/(2*wheel_radius*np.pi))
     ws2 = 360*(ws2_ms/(2*wheel_radius*np.pi))
@@ -91,7 +91,7 @@ def display(frame, mask):
     cv2.imshow("Frame", frame)
     cv2.imshow("Mask",mask)
 
-def start():
+def follow_line():
 
     capture = cv2.VideoCapture(CAMERA_ID)
 
@@ -156,4 +156,4 @@ def start():
         capture.release()
         cv2.destroyAllWindows()
 
-start()
+follow_line()
