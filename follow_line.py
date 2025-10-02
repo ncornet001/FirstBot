@@ -162,4 +162,4 @@ def start():
         capture.release()
         cv2.destroyAllWindows()
 
-follow_line()
+start()
