@@ -91,6 +91,19 @@ def display(frame, mask):
     cv2.imshow("Frame", frame)
     cv2.imshow("Mask",mask)
 
+def draw_map():
+    ws1 = get_present_speed(1)
+    ws2 = get_present_speed(2)
+    
+    X=[]
+    Y=[]
+
+    while start():
+        aze
+
+    return(X,Y)
+
+
 def start():
 
     capture = cv2.VideoCapture(CAMERA_ID)

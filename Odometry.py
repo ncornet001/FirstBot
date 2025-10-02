@@ -16,38 +16,33 @@ camera_height = 0.08
 current_pos = [0,0,0]
     
 def direct_kinematics(ws1,ws2): # Wheel Speed 1, Wheel Speed 2
-    ws1_ms = (ws1/360)*(2*wheel_radius)*np.pi
-    ws2_ms = (ws2/360)*(2*wheel_radius)*np.pi
+    v = wheel_radius/2*(ws1+ws2)*180/np.pi
+    angular_velocity = wheel_radius/distance_between_wheels*(ws1 - ws2)*180/np.pi
+    return[v,angular_velocity]
 
-    turning_angle = (ws1_ms/((distance_between_wheels)*np.pi)) * 360 -(ws2_ms/((distance_between_wheels)*np.pi)) * 360
-    linear_speed = (ws1_ms + ws2_ms)/2
-
-    return [linear_speed,turning_angle]
 
 def inverse_kinematics(target_speed,target_angle):
-    ws1_ms = (distance_between_wheels*np.pi*target_angle/720) + target_speed
-    ws2_ms = -(distance_between_wheels*np.pi*target_angle/720) + target_speed
-
-    ws1 = 360*(ws1_ms/(2*wheel_radius*np.pi))
-    ws2 = 360*(ws2_ms/(2*wheel_radius*np.pi))
+    target_speed = target_speed*np.pi/180
+    target_angle = target_angle*np.pi/180
+    ws1 = (target_speed + target_angle*distance_between_wheels/2)/(2*wheel_radius)
+    ws2 = (target_speed - target_angle*distance_between_wheels/2)/(2*wheel_radius)
     return [ws1,ws2]
 
-def odom(x,y,dir,linear_speed,turning_angle,delta):
-    differential = odom_differential(linear_speed,turning_angle,delta)
-    new_dir = dir + differential[2]
-    new_x = x + differential[0]*np.cos(np.deg2rad(dir))-differential[1]*np.sin(np.deg2rad(dir))
-    new_y = y + differential[0]*np.sin(np.deg2rad(dir))+differential[1]*np.cos(np.deg2rad(dir))
-    return [new_x,new_y,new_dir]
+def tick_odom(x,y,angle,linear_speed,turning_angle,delta_time):
+    differential = odom(linear_speed,turning_angle,delta_time)
+    new_angle = angle + differential[2]
+    new_x = x + differential[0]*np.cos(np.deg2rad(angle))-differential[1]*np.sin(np.deg2rad(angle))
+    new_y = y + differential[0]*np.sin(np.deg2rad(angle))+differential[1]*np.cos(np.deg2rad(angle))
+    return [new_x,new_y,new_angle]
 
-def odom_differential(linear_speed,turning_angle,delta,steps = 1):
-    dir = 0
+def odom(linear_speed,turning_angle,delta_time):
+    angle = 0
     dx = 0
     dy = 0
-    for i in range(steps):
-        dir += turning_angle*(delta/steps)
-        dx += linear_speed*np.cos(np.deg2rad(dir))*(delta/steps)
-        dy += linear_speed*np.sin(np.deg2rad(dir))*(delta/steps)
-    return [dx,dy,dir]
+    angle += turning_angle*(delta_time)
+    dx += linear_speed*np.cos(np.deg2rad(angle))*(delta_time)
+    dy += linear_speed*np.sin(np.deg2rad(angle))*(delta_time)
+    return [dx,dy,angle]
 
 def image_to_robot(u,v):
     x = u-0.5
@@ -65,24 +60,24 @@ def image_to_robot(u,v):
 def draw_random_trajectory():
     logs_x = [0]
     logs_y = [0]
-    logs_dir = [0]
+    logs_angle = [0]
 
     cur_x = logs_x[0]
     cur_y = logs_y[0]
-    cur_dir = logs_dir[0]
+    cur_angle = logs_angle[0]
 
     kinematic = direct_kinematics(0,360)
     for i in range(1,800):
         if((i % 25 == 0)):
             kinematic = direct_kinematics(random.randrange(-5, 5)*180,random.randrange(-5, 5)*180)
             print(kinematic)
-        res = odom(cur_x,cur_y,cur_dir,kinematic[0],kinematic[1],0.1)
+        res = tick_odom(cur_x,cur_y,cur_angle,kinematic[0],kinematic[1],0.1)
         cur_x = res[0]
         cur_y = res[1]
-        cur_dir = res[2]
+        cur_angle = res[2]
         logs_x.append(cur_x)
         logs_y.append(cur_y)
-        logs_dir.append(cur_dir)
+        logs_angle.append(cur_angle)
     fig, axs = plt.subplots(1, 1)
     axs.scatter(logs_x,logs_y)
     axs.set_aspect('equal')
@@ -91,24 +86,24 @@ def draw_random_trajectory():
 def draw_trajectory():
     logs_x = [0]
     logs_y = [0]
-    logs_dir = [0]
+    logs_angle = [0]
 
     cur_x = logs_x[0]
     cur_y = logs_y[0]
-    cur_dir = logs_dir[0]
+    cur_angle = logs_angle[0]
 
     kinematic = direct_kinematics(0,360)
     for i in range(1,800):
         if((i % 25 == 0)):
             kinematic = direct_kinematics(random.randrange(-5, 5)*180,random.randrange(-5, 5)*180)
             print(kinematic)
-        res = odom(cur_x,cur_y,cur_dir,kinematic[0],kinematic[1],0.1)
+        res = tick_odom(cur_x,cur_y,cur_angle,kinematic[0],kinematic[1],0.1)
         cur_x = res[0]
         cur_y = res[1]
-        cur_dir = res[2]
+        cur_angle = res[2]
         logs_x.append(cur_x)
         logs_y.append(cur_y)
-        logs_dir.append(cur_dir)
+        logs_angle.append(cur_angle)
     fig, axs = plt.subplots(1, 1)
     axs.scatter(logs_x,logs_y)
     axs.set_aspect('equal')
