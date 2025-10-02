@@ -156,18 +156,30 @@ class Odometry:
     def plot_trajectory(self, show=True, save_path=None):
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
         
+        with self._lock:
+            if len(self.history_x) == 0:
+                print("No trajectory data to plot")
+                return fig
+            hist_x = self.history_x.copy()
+            hist_y = self.history_y.copy()
+            hist_angle = self.history_angle.copy()
+            hist_time = self.history_time.copy()
+            current_x, current_y = self.x, self.y
+        
         # 2D Trajectory plot
-        ax1.plot(self.history_x, self.history_y, 'b-', linewidth=2, label='Trajectory')
-        ax1.scatter([self.history_x[0]], [self.history_y[0]], 
+        ax1.plot(hist_x, hist_y, 'b-', linewidth=2, label='Trajectory')
+        ax1.scatter([hist_x[0]], [hist_y[0]], 
                    c='green', s=100, marker='o', label='Start', zorder=5)
-        ax1.scatter([self.x], [self.y], 
+        ax1.scatter([current_x], [current_y], 
                    c='red', s=100, marker='x', label='Current position', zorder=5)
         
-        # Actual orientation arrow
+        # Actual orientation arrow using thread-safe data
+        with self._lock:
+            current_angle = self.angle
         arrow_length = 0.1
-        dx_arrow = arrow_length * np.cos(np.deg2rad(self.angle))
-        dy_arrow = arrow_length * np.sin(np.deg2rad(self.angle))
-        ax1.arrow(self.x, self.y, dx_arrow, dy_arrow,
+        dx_arrow = arrow_length * np.cos(np.deg2rad(current_angle))
+        dy_arrow = arrow_length * np.sin(np.deg2rad(current_angle))
+        ax1.arrow(current_x, current_y, dx_arrow, dy_arrow,
                  head_width=0.05, head_length=0.05, fc='red', ec='red')
         
         ax1.set_xlabel('X (m)')
@@ -178,8 +190,8 @@ class Odometry:
         ax1.axis('equal')
         
         # Angle over time
-        elapsed_times = [t - self.history_time[0] for t in self.history_time]
-        ax2.plot(elapsed_times, self.history_angle, 'r-', linewidth=2)
+        elapsed_times = [t - hist_time[0] for t in hist_time]
+        ax2.plot(elapsed_times, hist_angle, 'r-', linewidth=2)
         ax2.set_xlabel('Time (s)')
         ax2.set_ylabel('Angle (deg)')
         ax2.set_title('Orientation over time')

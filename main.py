@@ -56,20 +56,20 @@ def main():
     if args.follow_line:
         fl = FollowLine(motors, camera)
         fl.start()
-        odometry.save_map("maps/follow_line_map_"+datetime.now().strftime("%Y%m%d_%H%M%S")+".png")
+        odometry.save_map("follow_line_map_"+datetime.now().strftime("%Y%m%d_%H%M%S")+".png")
 
     elif args.goto:
         print('going to :', args.goto[0], args.goto[1], args.goto[2])
         gt = GoTo(motors, odometry)
         gt.set_target(args.goto[0], args.goto[1], args.goto[2])
         gt.start()
-        odometry.save_map("maps/go_to_map_"+datetime.now().strftime("%Y%m%d_%H%M%S")+".png")
+        odometry.save_map("go_to_map_"+datetime.now().strftime("%Y%m%d_%H%M%S")+".png")
 
     elif args.passive_mode:
         print('Activating passive mode')
         pm = PassiveMode(motors, odometry)
         pm.start()
-        odometry.save_map("maps/passive_mode_map_"+datetime.now().strftime("%Y%m%d_%H%M%S")+".png")
+        odometry.save_map("passive_mode_map_"+datetime.now().strftime("%Y%m%d_%H%M%S")+".png")
 
     else:
         print("No goal activated.")
