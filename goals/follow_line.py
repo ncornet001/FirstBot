@@ -23,15 +23,15 @@ BROWN_HIGH1 = np.array([4, 140, 140]) #to be adjusted
 BROWN_LOW2 = np.array([147, 8, 56])
 BROWN_HIGH2 = np.array([178, 140, 140])
 
-BROWN_DETECTION = 0.35
-BROWN_DETECTION_FULL = 0.2
+BROWN_DETECTION = 0.25
+BROWN_DETECTION_FULL = 0.1
 
 COLORS = [(YELLOW_LOW, YELLOW_HIGH),(BLUE_LOW, BLUE_HIGH), (RED_LOW, RED_HIGH)]
 
 BROWN_COOLDOWN = 5
 BROWN_START_IGNORE_TIME = 5
 
-THETA_CONST = 140
+THETA_CONST = 80
 
 display_on = False
 motor_on = True
@@ -48,6 +48,7 @@ class FollowLine():
         self.frame_count = 0
         self.should_exit = False
         self.keyboard_thread = None
+        self.is_top_line = False
 
     def next_color(self):
         self.current_color_index += 1
@@ -121,10 +122,6 @@ class FollowLine():
 
         color_pixels = cv2.countNonZero(mixed)
         total_pixels = mask.size
-
-        if (color_pixels / total_pixels) > percentage_threshold:
-            print(color_pixels / total_pixels)
-
         if (color_pixels / total_pixels) > percentage_threshold:
             return self.detect_color_full_frame(frame, color_low1, color_high1, color_low2, color_high2, full_frame_threshold)
 
@@ -174,9 +171,18 @@ class FollowLine():
                                 break
                             print("Color changed to index " + str(self.current_color_index))
                         last_brown_seen = time.time()
+                        self.motors.move(0.1, error_norm*THETA_CONST)
 
+                    if (time.time() - last_brown_seen < 3):
+
+                        hsv = cv2.cvtColor(top_frame, cv2.COLOR_BGR2HSV)
                 mask = Camera.get_line_mask(hsv, current_low, current_high)
                 contour = Camera.get_biggest_contour(mask)
+
+                speed_mult = 1
+                if (time.time() - last_brown_seen < 3):
+                    print("Slow mode")
+                    speed_mult = .1
 
                 if contour is not None:
                     center = Camera.get_contour_center(contour)
@@ -186,7 +192,8 @@ class FollowLine():
 
                         error_norm = (error / frame.shape[1])*2
 
-                        speed_mult = 1-abs(error_norm)
+                        speed_mult = speed_mult * (1-abs(error_norm))
+                        
                         self.motors.move(speed_mult, error_norm*THETA_CONST)
 
                         if display_on:
