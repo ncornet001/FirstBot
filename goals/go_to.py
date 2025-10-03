@@ -7,6 +7,7 @@ BASE_SPEED = 0.2
 BASE_TURN_SPEED = 120
 DISTANCE_THRESHOLD = 0.05
 ANGLE_THRESHOLD = 5.0  # degrees
+MOVE_ANGLE
 
 display_on = True
 
@@ -91,19 +92,18 @@ class GoTo:
                 
                 if distance_to_target >= DISTANCE_THRESHOLD:
                     # Navigate to position
-                    # TODO: What happens if angle is exactly 45 degrees?
-                    speed_mult = self.clamp(1 - (abs(ddir_to_target) / 45), 0, 1)
-                    angle_mult = self.clamp(abs(ddir_to_target) / 45, 0.2, 1)
+                    speed_mult = self.clamp(1 - (abs(ddir_to_target) / MOVE_ANGLE), 0, 1)
+                    angle_mult = self.clamp(abs(ddir_to_target) / MOVE_ANGLE, 0.2, 1)
                     
                     self.motors.move(
                         BASE_SPEED * speed_mult,
-                        BASE_TURN_SPEED * -self.sign(ddir_to_target) * angle_mult
+                        BASE_TURN_SPEED * self.sign(ddir_to_target) * angle_mult
                     )
                     
                 else:
                     # Final rotation
                     if abs(ddir) > ANGLE_THRESHOLD:
-                        angle_mult = self.clamp(abs(ddir) / 45, 0.2, 1)
+                        angle_mult = self.clamp(abs(ddir) / MOVE_ANGLE, 0.2, 1)
                         self.motors.move(
                             0,
                             BASE_TURN_SPEED * -self.sign(ddir) * angle_mult

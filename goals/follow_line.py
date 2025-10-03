@@ -1,5 +1,5 @@
 import cv2
-import datetime
+import time
 import numpy as np
 import matplotlib.pyplot as plt
 from modules.motor_controller import MotorController
@@ -16,16 +16,16 @@ RED_HIGH = np.array([20, 255, 255])
 YELLOW_LOW = np.array([25, 50, 50])
 YELLOW_HIGH = np.array([85, 255, 255])
 
-BROWN_LOW = np.array([0, 0, 0])
+BROWN_LOW = np.array([0, 30, 0])
 BROWN_HIGH = np.array([180, 150, 150]) #to be adjusted
+
+BROWN_DETECTION = 0.5
+BROWN_DETECTION_FULL = 0.2
 
 COLORS = [(YELLOW_LOW, YELLOW_HIGH),(BLUE_LOW, BLUE_HIGH), (RED_LOW, RED_HIGH)]
 
-BASE_SPEED = 0.2
-RIGHT_SPEED_MULT = -1
-LEFT_SPEED_MULT = 1
-LEFT_ID = 2
-RIGHT_ID = 1
+BROWN_COOLDOWN = 5
+BROWN_START_IGNORE_TIME = 5
 
 THETA_CONST = 140
 
@@ -40,22 +40,8 @@ class FollowLine():
     def __init__(self, motors, camera):
         self.motors:MotorController = motors
         self.camera:Camera = camera
-        self.current_color_index = 1
+        self.current_color_index = 0
         self.frame_count = 0
-
-    def check_color_line(self, hsv):
-        pass
-        # if(self.detect_color(hsv,BROWN_LOW,BROWN_HIGH)):
-        #     if(not seen_brown_last_frame):
-        #         color_index = color_index+1
-        #         if color_index > len(COLORS)-1:
-        #             return 1
-        
-        #     seen_brown_last_frame = True
-        # else:
-        #     seen_brown_last_frame = False
-        # print("color index : ",color_index)
-        # return 0
 
     def get_direction(self): 
         ret, frame = self.camera.read_frame()
@@ -85,16 +71,32 @@ class FollowLine():
                 return speed_mult, error_norm*THETA_CONST
         return 0,0
         
-
-    def detect_color(self,hsv,color_low,color_high, percentage_threshold=0.3):
-        mask = cv2.inRange(hsv, color_low, color_high)
+    def detect_color_full_frame(self, frame, color_low, color_high, full_frame_threshold=0.2):
+        print("Assuring previous detection")
+        mask = cv2.inRange(frame, color_low, color_high)
         color_pixels = cv2.countNonZero(mask)
         total_pixels = mask.size
-        return (color_pixels / total_pixels) > percentage_threshold
+        return (color_pixels / total_pixels) > full_frame_threshold
+
+    def detect_color(self, frame, cropped_frame, color_low, color_high, percentage_threshold=0.7, full_frame_threshold=0.2):
+        mask = cv2.inRange(frame, color_low, color_high)
+        color_pixels = cv2.countNonZero(mask)
+        total_pixels = mask.size
+        if (color_pixels / total_pixels) > percentage_threshold:
+            return self.detect_color_full_frame(frame, color_low, color_high, full_frame_threshold)
+
+        return False
 
     def start(self):
         try:
+
+            last_time = 0
+            last_brown_seen = time.time() - (BROWN_COOLDOWN - BROWN_START_IGNORE_TIME)
+
             while True:
+
+                last_time = time.time()
+
                 self.frame_count += 1
                 current_low, current_high = COLORS[self.current_color_index]
                 ret, frame = self.camera.read_frame()
@@ -103,15 +105,22 @@ class FollowLine():
                     print("No frame received")
                     break
 
+                full_frame = frame
                 frame = frame[-20:, :, :]
                 #frame = frame[frame.shape[0]-20:, :, :]
 
                 hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+                full_hsv = cv2.cvtColor(full_frame, cv2.COLOR_BGR2HSV)
 
-                # if(self.detect_color(hsv,BROWN_LOW,BROWN_HIGH)):
-                #     if(not seen_brown_last_frame):
-                #         color_index = min(2,color_index+1)
-                #     seen_brown_last_frame = True
+                if(self.detect_color(full_hsv, hsv, BROWN_LOW, BROWN_HIGH, BROWN_DETECTION, BROWN_DETECTION_FULL)):
+                    if(time.time() - last_brown_seen > BROWN_COOLDOWN):
+                        self.current_color_index += 1
+                        if self.current_color_index > len(COLORS)-1:
+                            print("Finished last color")
+                            break
+                        print("Color changed to index " + str(self.current_color_index))
+                    last_brown_seen = time.time()
+                        
                 # else:
                 #     seen_brown_last_frame = False
                 # print("color index : ",color_index)

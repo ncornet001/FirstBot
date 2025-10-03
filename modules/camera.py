@@ -1,6 +1,7 @@
 """Camera module for robot vision processing."""
 import cv2
 
+MINIMUM_PERCENTAGE_DETECTION = 0.03
 
 class Camera:
     """Camera class for robot vision processing."""
@@ -73,7 +74,11 @@ class Camera:
         if len(contours) == 0:
             return None
         
-        return max(contours, key=cv2.contourArea)
+        contour_max = max(contours, key=cv2.contourArea)
+        if (cv2.contourArea(contour_max) < (MINIMUM_PERCENTAGE_DETECTION*mask.size)):
+            return None
+
+        return contour_max
 
     @staticmethod
     def get_line_mask(hsv, color_low, color_high):

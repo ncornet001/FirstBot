@@ -35,7 +35,7 @@ def main():
     print("=" * 50)
 
     try : 
-        motors = MotorController()
+        motors = MotorController(base_speed=0.4)
         motors.setup_motors()
         odometry = Odometry()
         odometry.reset()

@@ -25,7 +25,7 @@ class MotorController:
     
     def get_speed(self):
         self._ensure_initialized()
-        speeds = self.dxl_io.get_moving_speed([self.LEFT_ID,self.RIGHT_ID])
+        speeds = self.dxl_io.get_present_speed([self.LEFT_ID,self.RIGHT_ID])
         return kinematics.direct(speeds[1]*self.RIGHT_SPEED_MULT, speeds[0]) # Check order (right - left or left - right)
     
     def move(self, speed_factor, turning_angle):
@@ -50,7 +50,7 @@ class MotorController:
         self._ensure_initialized()
         try:
             # Disable torque to allow free movement
-            self.dxl_io.enable_torque([self.RIGHT_ID, self.LEFT_ID], False)
+            self.dxl_io.disable_torque([self.RIGHT_ID, self.LEFT_ID])
             print("Motors set to passive mode (torque disabled)")
         except Exception as e:
             print(f"Could not set passive mode: {e}")
@@ -60,7 +60,7 @@ class MotorController:
         self._ensure_initialized()
         try:
             # Re-enable torque 
-            self.dxl_io.enable_torque([self.RIGHT_ID, self.LEFT_ID], True)
+            self.dxl_io.enable_torque([self.RIGHT_ID, self.LEFT_ID])
             print("Motors returned to active mode (torque enabled)")
         except Exception as e:
             print(f"Could not disable passive mode: {e}")
