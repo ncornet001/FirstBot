@@ -2,7 +2,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import time
-import datetime
+from datetime import datetime
 import threading
 from . import kinematics
 
@@ -26,7 +26,7 @@ class Odometry:
         self._running = False
         self._lock = threading.Lock()
         self._motor_controller = None
-        self._frequency = 100  # Hz
+        self._frequency = 30  # Hz
         self._update_count = 0
         self._start_time = time.time()
         

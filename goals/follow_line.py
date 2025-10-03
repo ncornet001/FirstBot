@@ -29,7 +29,7 @@ RIGHT_ID = 1
 
 THETA_CONST = 140
 
-display_on = True
+display_on = False
 motor_on = True
 map_on = True
 
@@ -40,7 +40,7 @@ class FollowLine():
     def __init__(self, motors, camera):
         self.motors:MotorController = motors
         self.camera:Camera = camera
-        self.current_color_index = 0
+        self.current_color_index = 1
         self.frame_count = 0
 
     def check_color_line(self, hsv):
