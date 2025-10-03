@@ -2,7 +2,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import time
-import datetime
+from datetime import datetime
 import threading
 from . import kinematics
 

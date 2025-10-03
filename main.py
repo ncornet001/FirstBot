@@ -35,15 +35,12 @@ def main():
     print("=" * 50)
 
     try : 
-        camera = Camera()
-        camera.setup()
         motors = MotorController()
         motors.setup_motors()
         odometry = Odometry()
         odometry.reset()
         
         odometry.start_thread(motors, frequency=100)
-        print("Odometry thread started at 100Hz")
         
     except Exception as e:
         print(f"Initialization error: {e}")
@@ -54,6 +51,15 @@ def main():
     print("=" * 50)
 
     if args.follow_line:
+
+        try : 
+            camera = Camera()
+            camera.setup()
+            
+        except Exception as e:
+            print(f"Initialization error: {e}")
+            return 1
+
         fl = FollowLine(motors, camera)
         fl.start()
         odometry.save_map("follow_line_map_"+datetime.now().strftime("%Y%m%d_%H%M%S")+".png")
