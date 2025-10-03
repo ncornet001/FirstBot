@@ -2,6 +2,7 @@ import cv2
 import time
 import numpy as np
 import matplotlib.pyplot as plt
+import threading
 from modules.motor_controller import MotorController
 from modules.camera import Camera
 
@@ -42,6 +43,33 @@ class FollowLine():
         self.camera:Camera = camera
         self.current_color_index = 0
         self.frame_count = 0
+        self.should_exit = False
+        self.keyboard_thread = None
+
+    def next_color(self):
+        self.current_color_index += 1
+        if self.current_color_index >= len(COLORS):
+            self.should_exit = True
+            return False
+
+        return True
+
+    def keyboard_listener(self):
+        try:
+            while not self.should_exit:
+                user_input = input("Press 'c' to change color, 'q' to quit: ").strip().lower()
+                if user_input == 'c':
+                    if not self.next_color():
+                        print("Last color done...")
+                        break
+                    print(f"New color index: {self.current_color_index}")
+                elif user_input == 'q':
+                    print("Quitting...")
+                    self.should_exit = True
+                    break
+        except EOFError:
+            # Ctrl+D
+            self.should_exit = True
 
     def get_direction(self): 
         ret, frame = self.camera.read_frame()
@@ -87,13 +115,20 @@ class FollowLine():
 
         return False
 
-    def start(self):
+    def start(self, manual_switch=False):
+
+        if manual_switch:
+            self.should_exit = False
+            self.keyboard_thread = threading.Thread(target=self.keyboard_listener, daemon=True)
+            self.keyboard_thread.start()
+            print("Manual mode activated. Press 'c' to change color, 'q' to quit.")
+        
         try:
 
             last_time = 0
             last_brown_seen = time.time() - (BROWN_COOLDOWN - BROWN_START_IGNORE_TIME)
 
-            while True:
+            while not self.should_exit:
 
                 last_time = time.time()
 
@@ -110,20 +145,22 @@ class FollowLine():
                 #frame = frame[frame.shape[0]-20:, :, :]
 
                 hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-                full_hsv = cv2.cvtColor(full_frame, cv2.COLOR_BGR2HSV)
 
-                if(self.detect_color(full_hsv, hsv, BROWN_LOW, BROWN_HIGH, BROWN_DETECTION, BROWN_DETECTION_FULL)):
-                    if(time.time() - last_brown_seen > BROWN_COOLDOWN):
-                        self.current_color_index += 1
-                        if self.current_color_index > len(COLORS)-1:
-                            print("Finished last color")
-                            break
-                        print("Color changed to index " + str(self.current_color_index))
-                    last_brown_seen = time.time()
-                        
-                # else:
-                #     seen_brown_last_frame = False
-                # print("color index : ",color_index)
+                if not manual_switch:
+                    full_hsv = cv2.cvtColor(full_frame, cv2.COLOR_BGR2HSV)
+
+                    if(self.detect_color(full_hsv, hsv, BROWN_LOW, BROWN_HIGH, BROWN_DETECTION, BROWN_DETECTION_FULL)):
+                        if(time.time() - last_brown_seen > BROWN_COOLDOWN):
+                            self.current_color_index += 1
+                            if self.current_color_index > len(COLORS)-1:
+                                print("Finished last color")
+                                break
+                            print("Color changed to index " + str(self.current_color_index))
+                        last_brown_seen = time.time()
+                            
+                    # else:
+                    #     seen_brown_last_frame = False
+                    # print("color index : ",color_index)
 
                 mask = Camera.get_line_mask(hsv, current_low, current_high)
                 contour = Camera.get_biggest_contour(mask)
@@ -154,15 +191,20 @@ class FollowLine():
         
         except KeyboardInterrupt:
             print("Stopping motors due to Ctrl+C...")
+            self.should_exit = True
             self.motors.stop()
             return 1
 
         except Exception as e:
             print(e)
+            self.should_exit = True
             self.motors.stop()
             return 1
 
         finally:
+            self.should_exit = True
+            if manual_switch and self.keyboard_thread and self.keyboard_thread.is_alive():
+                self.keyboard_thread.join(timeout=1.0)
             self.motors.stop()
 
 

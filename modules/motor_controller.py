@@ -26,7 +26,7 @@ class MotorController:
     def get_speed(self):
         self._ensure_initialized()
         speeds = self.dxl_io.get_present_speed([self.LEFT_ID,self.RIGHT_ID])
-        return kinematics.direct(speeds[1]*self.RIGHT_SPEED_MULT, speeds[0]) # Check order (right - left or left - right)
+        return kinematics.direct(speeds[1]*self.RIGHT_SPEED_MULT, speeds[0]*self.LEFT_SPEED_MULT)
     
     def move(self, speed_factor, turning_angle):
         self._ensure_initialized()

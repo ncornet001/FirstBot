@@ -7,7 +7,7 @@ BASE_SPEED = 0.2
 BASE_TURN_SPEED = 120
 DISTANCE_THRESHOLD = 0.05
 ANGLE_THRESHOLD = 5.0  # degrees
-MOVE_ANGLE
+MOVE_ANGLE = 90
 
 display_on = True
 
@@ -97,7 +97,7 @@ class GoTo:
                     
                     self.motors.move(
                         BASE_SPEED * speed_mult,
-                        BASE_TURN_SPEED * self.sign(ddir_to_target) * angle_mult
+                        BASE_TURN_SPEED * -self.sign(ddir_to_target) * angle_mult
                     )
                     
                 else:

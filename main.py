@@ -11,6 +11,8 @@ def main():
     # Parse arguments
     parser = argparse.ArgumentParser(description='Robot control with multiple goals')
     parser.add_argument('--follow-line', action='store_true', help='Enable line following')
+    parser.add_argument('--manual-switch', action='store_true', 
+                       help='Enable manual color switching (use with --follow-line)')
     parser.add_argument('--goto', nargs=3, type=float, metavar=('X', 'Y', 'ANGLE'),
                        help='Navigate to position (X, Y) and align to given angle')
     parser.add_argument('--passive-mode', action='store_true', 
@@ -19,6 +21,9 @@ def main():
     args = parser.parse_args()
     print(args)
 
+    if args.manual_switch and not args.follow_line:
+        print('Error: --manual-switch can only be used with --follow-line')
+        exit(1)
 
     # check if there isn't several arguments
     goal_count = sum([args.follow_line, bool(args.goto), args.passive_mode])
@@ -61,7 +66,7 @@ def main():
             return 1
 
         fl = FollowLine(motors, camera)
-        fl.start()
+        fl.start(args.manual_switch)
         odometry.save_map("follow_line_map_"+datetime.now().strftime("%Y%m%d_%H%M%S")+".png")
 
     elif args.goto:
