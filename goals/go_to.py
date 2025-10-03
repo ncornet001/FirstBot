@@ -39,6 +39,8 @@ class GoTo:
     @staticmethod
     def angle_distance(angle1, angle2):
         diff = (angle2 - angle1 + 180) % 360 - 180
+        if diff == -180:
+            return 180
         return diff
 
     @staticmethod
@@ -96,7 +98,7 @@ class GoTo:
                     angle_mult = self.clamp(abs(ddir_to_target) / MOVE_ANGLE, 0.2, 1)
                     
                     self.motors.move(
-                        BASE_SPEED * speed_mult,
+                        speed_mult,
                         BASE_TURN_SPEED * -self.sign(ddir_to_target) * angle_mult
                     )
                     

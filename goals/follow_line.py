@@ -17,10 +17,13 @@ RED_HIGH = np.array([20, 255, 255])
 YELLOW_LOW = np.array([25, 50, 50])
 YELLOW_HIGH = np.array([85, 255, 255])
 
-BROWN_LOW = np.array([0, 30, 0])
-BROWN_HIGH = np.array([180, 150, 150]) #to be adjusted
+BROWN_LOW1 = np.array([0, 8, 56])
+BROWN_HIGH1 = np.array([4, 140, 140]) #to be adjusted
 
-BROWN_DETECTION = 0.5
+BROWN_LOW2 = np.array([147, 8, 56])
+BROWN_HIGH2 = np.array([178, 140, 140])
+
+BROWN_DETECTION = 0.35
 BROWN_DETECTION_FULL = 0.2
 
 COLORS = [(YELLOW_LOW, YELLOW_HIGH),(BLUE_LOW, BLUE_HIGH), (RED_LOW, RED_HIGH)]
@@ -99,19 +102,31 @@ class FollowLine():
                 return speed_mult, error_norm*THETA_CONST
         return 0,0
         
-    def detect_color_full_frame(self, frame, color_low, color_high, full_frame_threshold=0.2):
+    def detect_color_full_frame(self, frame, color_low1, color_high1, color_low2, color_high2, full_frame_threshold=0.2):
         print("Assuring previous detection")
-        mask = cv2.inRange(frame, color_low, color_high)
-        color_pixels = cv2.countNonZero(mask)
-        total_pixels = mask.size
+        mask = cv2.inRange(frame, color_low1, color_high1)
+        mask2 = cv2.inRange(frame, color_low2, color_high2)
+
+        mixed = cv2.bitwise_or(mask, mask2)
+
+        color_pixels = cv2.countNonZero(mixed)
+        total_pixels = mixed.size
         return (color_pixels / total_pixels) > full_frame_threshold
 
-    def detect_color(self, frame, cropped_frame, color_low, color_high, percentage_threshold=0.7, full_frame_threshold=0.2):
-        mask = cv2.inRange(frame, color_low, color_high)
-        color_pixels = cv2.countNonZero(mask)
+    def detect_color(self, frame, cropped_frame, color_low1, color_high1, color_low2, color_high2, percentage_threshold=0.3, full_frame_threshold=0.2):
+        mask = cv2.inRange(frame, color_low1, color_high1)
+        mask2 = cv2.inRange(frame, color_low2, color_high2)
+
+        mixed = cv2.bitwise_or(mask, mask2)
+
+        color_pixels = cv2.countNonZero(mixed)
         total_pixels = mask.size
+
         if (color_pixels / total_pixels) > percentage_threshold:
-            return self.detect_color_full_frame(frame, color_low, color_high, full_frame_threshold)
+            print(color_pixels / total_pixels)
+
+        if (color_pixels / total_pixels) > percentage_threshold:
+            return self.detect_color_full_frame(frame, color_low1, color_high1, color_low2, color_high2, full_frame_threshold)
 
         return False
 
@@ -141,7 +156,9 @@ class FollowLine():
                     break
 
                 full_frame = frame
+                top_frame = frame[0:20, :, :]
                 frame = frame[-20:, :, :]
+
                 #frame = frame[frame.shape[0]-20:, :, :]
 
                 hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
@@ -149,7 +166,7 @@ class FollowLine():
                 if not manual_switch:
                     full_hsv = cv2.cvtColor(full_frame, cv2.COLOR_BGR2HSV)
 
-                    if(self.detect_color(full_hsv, hsv, BROWN_LOW, BROWN_HIGH, BROWN_DETECTION, BROWN_DETECTION_FULL)):
+                    if(self.detect_color(full_hsv, hsv, BROWN_LOW1, BROWN_HIGH1, BROWN_LOW2, BROWN_HIGH2, BROWN_DETECTION, BROWN_DETECTION_FULL)):
                         if(time.time() - last_brown_seen > BROWN_COOLDOWN):
                             self.current_color_index += 1
                             if self.current_color_index > len(COLORS)-1:
@@ -157,10 +174,6 @@ class FollowLine():
                                 break
                             print("Color changed to index " + str(self.current_color_index))
                         last_brown_seen = time.time()
-                            
-                    # else:
-                    #     seen_brown_last_frame = False
-                    # print("color index : ",color_index)
 
                 mask = Camera.get_line_mask(hsv, current_low, current_high)
                 contour = Camera.get_biggest_contour(mask)
