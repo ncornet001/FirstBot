@@ -30,6 +30,7 @@ class GoTo:
         if x == 0 and y == 0:
             return 0
         if y < 0:
+            # TODO: Can vec_length return 0?
             return -180 * np.arccos(x / GoTo.vec_length(x, y)) / np.pi
         else:
             return 180 * np.arccos(x / GoTo.vec_length(x, y)) / np.pi
@@ -90,6 +91,7 @@ class GoTo:
                 
                 if distance_to_target >= DISTANCE_THRESHOLD:
                     # Navigate to position
+                    # TODO: What happens if angle is exactly 45 degrees?
                     speed_mult = self.clamp(1 - (abs(ddir_to_target) / 45), 0, 1)
                     angle_mult = self.clamp(abs(ddir_to_target) / 45, 0.2, 1)
                     
@@ -114,7 +116,7 @@ class GoTo:
                 # is target reached
                 if (distance_to_target <= DISTANCE_THRESHOLD and 
                     abs(ddir) <= ANGLE_THRESHOLD):
-                    print("🎯 Target reached successfully!")
+                    print("Target reached successfully!")
                     self.motors.stop()
                     break
                     
@@ -123,9 +125,9 @@ class GoTo:
             
             elapsed_time = time.time() - start_time
             final_pos = self.get_current_position()
-            print(f"   Final position: ({final_pos[0]:.3f}, {final_pos[1]:.3f})")
-            print(f"   Final angle: {final_pos[2]:.1f}°")
-            
+            print(f"Final position: ({final_pos[0]:.3f}, {final_pos[1]:.3f})")
+            print(f"Final angle: {final_pos[2]:.1f}°")
+
             return 0
             
         except KeyboardInterrupt:

@@ -55,12 +55,23 @@ class Odometry:
     #     linear_speed, angular_speed = Kinematic.direct(left_speed, right_speed)        
     #     self.update_odometry(linear_speed, angular_speed, delta_time)
     
-    def odom(self, linear_speed, turning_angle, delta_time):
+    def odom(self, linear_speed, turning_angle, delta_time): #TODO Was changed
         dangle = turning_angle * delta_time
         angle_rad = np.deg2rad(dangle)
         dx = linear_speed * np.cos(angle_rad) * delta_time
         dy = linear_speed * np.sin(angle_rad) * delta_time
         return dx, dy, dangle
+    
+    """
+    def odom(linear_speed,angular_speed,delta_time):
+        if angular_speed == 0:
+            return [linear_speed*delta_time,0,0]
+        dangle = angular_speed*delta_time
+
+        dx = linear_speed/angular_speed*np.sin(np.deg2rad(dangle))
+        dy = linear_speed/angular_speed*(1-np.cos(np.deg2rad(dangle)))
+        return [dx,dy,dangle]
+    """
     
     def tick_odom(self,x,y,angle,linear_speed,angular_speed,delta_time):
         dx,dy,dangle = self.odom(linear_speed,angular_speed,delta_time)
