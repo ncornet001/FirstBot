@@ -221,4 +221,4 @@ class Odometry:
     
     def save_map(self, pathname):
         fig = self.plot_trajectory(show=False)
-        fig.savefig(pathname+ datetime.today().strftime('%Y-%m-%d_%H-%M-%S')+".png")
+        fig.savefig(pathname)

@@ -31,7 +31,7 @@ COLORS = [(YELLOW_LOW, YELLOW_HIGH),(BLUE_LOW, BLUE_HIGH), (RED_LOW, RED_HIGH)]
 BROWN_COOLDOWN = 5
 BROWN_START_IGNORE_TIME = 5
 
-THETA_CONST = 80
+THETA_CONST = 140
 
 display_on = False
 motor_on = True
@@ -171,18 +171,18 @@ class FollowLine():
                                 break
                             print("Color changed to index " + str(self.current_color_index))
                         last_brown_seen = time.time()
-                        self.motors.move(0.1, error_norm*THETA_CONST)
+                        self.motors.move(0.3, 0)
 
                     if (time.time() - last_brown_seen < 3):
-
                         hsv = cv2.cvtColor(top_frame, cv2.COLOR_BGR2HSV)
+
                 mask = Camera.get_line_mask(hsv, current_low, current_high)
                 contour = Camera.get_biggest_contour(mask)
 
                 speed_mult = 1
                 if (time.time() - last_brown_seen < 3):
                     print("Slow mode")
-                    speed_mult = .1
+                    speed_mult = .3
 
                 if contour is not None:
                     center = Camera.get_contour_center(contour)
