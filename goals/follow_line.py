@@ -1,5 +1,5 @@
 import cv2
-import datetime
+import time
 import numpy as np
 import matplotlib.pyplot as plt
 from modules.motor_controller import MotorController
@@ -16,7 +16,7 @@ RED_HIGH = np.array([20, 255, 255])
 YELLOW_LOW = np.array([25, 50, 50])
 YELLOW_HIGH = np.array([85, 255, 255])
 
-BROWN_LOW = np.array([0, 0, 0])
+BROWN_LOW = np.array([0, 30, 0])
 BROWN_HIGH = np.array([180, 150, 150]) #to be adjusted
 
 COLORS = [(YELLOW_LOW, YELLOW_HIGH),(BLUE_LOW, BLUE_HIGH), (RED_LOW, RED_HIGH)]
@@ -28,6 +28,9 @@ LEFT_ID = 2
 RIGHT_ID = 1
 
 THETA_CONST = 140
+
+BROWN_COOLDOWN = 5
+BROWN_START_IGNORE_TIME = 1
 
 display_on = True
 motor_on = True
@@ -94,7 +97,12 @@ class FollowLine():
 
     def start(self):
         try:
+            last_delta_time = 0
+            last_brown_seen = time.time() - (BROWN_COOLDOWN - BROWN_START_IGNORE_TIME)
             while True:
+                delta_time = time.time() - last_delta_time
+                last_delta_time = time.time()
+
                 self.frame_count += 1
                 current_low, current_high = COLORS[self.current_color_index]
                 ret, frame = self.camera.read_frame()
@@ -108,10 +116,10 @@ class FollowLine():
 
                 hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
-                # if(self.detect_color(hsv,BROWN_LOW,BROWN_HIGH)):
-                #     if(not seen_brown_last_frame):
-                #         color_index = min(2,color_index+1)
-                #     seen_brown_last_frame = True
+                if(self.detect_color(hsv,BROWN_LOW,BROWN_HIGH)):
+                    if(time.time() - last_brown_seen > BROWN_COOLDOWN):
+                        self.current_color_index = min(2,self.current_color_index+1)
+                    last_brown_seen = time.time()
                 # else:
                 #     seen_brown_last_frame = False
                 # print("color index : ",color_index)
